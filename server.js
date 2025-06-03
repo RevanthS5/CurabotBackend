@@ -2,6 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 const connectDB = require("./config/db");
 const dbMiddleware = require("./middleware/dbMiddleware");
 
@@ -41,25 +42,26 @@ app.use("/api/ai/chatbot", require("./routes/chatbotRoutes")); // Chatbot Routes
 
 console.log("🔍 Routes configured");
 
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  // Set static folder
-  app.use(express.static(path.join(__dirname, 'public')));
+// Root route for both development and production
+app.get("/", (req, res) => {
+  console.log("🔍 Root route accessed");
+  res.send("CuraBot Backend is Running using env!");
+});
 
-  // For any route that is not an API route, serve the index.html
-  app.get('*', (req, res) => {
-    if (req.path.startsWith('/api')) {
-      return res.status(404).send('API endpoint not found');
-    }
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-  });
-} else {
-  // Default Route for development
-  app.get("/", (req, res) => {
-    console.log("🔍 Root route accessed");
-    res.send("CuraBot Backend is Running using env!");
-  });
-}
+if (process.env.NODE_ENV === 'production') {
+  // Set static folder if needed for production
+  if (fs.existsSync(path.join(__dirname, 'public'))) {
+    app.use(express.static(path.join(__dirname, 'public')));
+    
+    // For any route that is not an API route, serve the index.html
+    app.get('*', (req, res) => {
+      if (req.path.startsWith('/api')) {
+        return res.status(404).send('API endpoint not found');
+      }
+      res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    });
+  }
+} 
 
 // For local development, start the server
 if (process.env.NODE_ENV !== 'production') {
